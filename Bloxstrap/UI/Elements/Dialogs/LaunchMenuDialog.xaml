@@ -53,7 +53,7 @@
 
             <StackPanel Grid.Column="1" Margin="20,8,0,8">
                 <TextBlock Text="Quick launch" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,12" />
-                <TextBlock Text="Start Roblox, configure VNTrap, or open Studio." FontSize="13" Margin="0,0,0,16" Foreground="{DynamicResource TextFillColorTertiaryBrush}" TextWrapping="Wrap" />
+                <TextBlock Text="Start Roblox, run multiple clients, configure VNTrap, or open Studio." FontSize="13" Margin="0,0,0,16" Foreground="{DynamicResource TextFillColorTertiaryBrush}" TextWrapping="Wrap" />
 
                 <ui:CardAction Icon="ArrowRight12" TabIndex="0" Command="{Binding LaunchRobloxCommand, Mode=OneTime}">
                     <StackPanel>
@@ -62,14 +62,21 @@
                     </StackPanel>
                 </ui:CardAction>
 
-                <ui:CardAction Margin="0,10,0,0" TabIndex="1" Icon="Settings28" Command="{Binding LaunchSettingsCommand, Mode=OneTime}">
+                <ui:CardAction Margin="0,10,0,0" TabIndex="1" Icon="People24" Command="{Binding LaunchMultiRobloxCommand, Mode=OneTime}">
+                    <StackPanel>
+                        <TextBlock FontSize="14" FontWeight="SemiBold" Text="Multiple Roblox clients" />
+                        <TextBlock FontSize="12" Text="Start two clients with performance mode enabled" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                    </StackPanel>
+                </ui:CardAction>
+
+                <ui:CardAction Margin="0,10,0,0" TabIndex="2" Icon="Settings28" Command="{Binding LaunchSettingsCommand, Mode=OneTime}">
                     <StackPanel>
                         <TextBlock FontSize="14" FontWeight="SemiBold" Text="{x:Static resources:Strings.LaunchMenu_ConfigureSettings}" />
                         <TextBlock FontSize="12" Text="Performance, appearance, flags and integrations" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
                     </StackPanel>
                 </ui:CardAction>
 
-                <ui:CardAction Visibility="Visible" Margin="0,10,0,0" TabIndex="2" Icon="Wrench24" Command="{Binding LaunchRobloxStudioCommand, Mode=OneTime}">
+                <ui:CardAction Visibility="Visible" Margin="0,10,0,0" TabIndex="3" Icon="Wrench24" Command="{Binding LaunchRobloxStudioCommand, Mode=OneTime}">
                     <StackPanel>
                         <TextBlock FontSize="14" FontWeight="SemiBold" Text="{x:Static resources:Strings.LaunchMenu_LaunchRobloxStudio}" />
                         <TextBlock FontSize="12" Text="Open Roblox Studio" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
