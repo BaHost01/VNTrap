@@ -5,7 +5,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using System.Web;
 using System.Windows;
 
 namespace Bloxstrap
@@ -13,34 +12,22 @@ namespace Bloxstrap
     public class LaunchSettings
     {
         public LaunchFlag MenuFlag                  { get; } = new("preferences,menu,settings");
-
         public LaunchFlag WatcherFlag               { get; } = new("watcher");
-
         public LaunchFlag BackgroundUpdaterFlag     { get; } = new("backgroundupdater");
-
         public LaunchFlag QuietFlag                 { get; } = new("quiet");
-
         public LaunchFlag UninstallFlag             { get; } = new("uninstall");
-
         public LaunchFlag NoLaunchFlag              { get; } = new("nolaunch");
-        
         public LaunchFlag TestModeFlag              { get; } = new("testmode");
-
         public LaunchFlag NoGPUFlag                 { get; } = new("nogpu");
-
         public LaunchFlag UpgradeFlag               { get; } = new("upgrade");
-        
         public LaunchFlag PlayerFlag                { get; } = new("player");
-        
         public LaunchFlag StudioFlag                { get; } = new("studio");
-
         public LaunchFlag VersionFlag               { get; } = new("version");
-
         public LaunchFlag ChannelFlag               { get; } = new("channel");
-
         public LaunchFlag ForceFlag                 { get; } = new("force");
-
-        public LaunchFlag BloxshadeFlag { get; } = new("bloxshade");
+        public LaunchFlag BloxshadeFlag             { get; } = new("bloxshade");
+        public LaunchFlag MultiInstanceFlag         { get; } = new("multi,multiinstance");
+        public LaunchFlag PerformanceFlag           { get; } = new("performance,perf");
 
 #if DEBUG
         public bool BypassUpdateCheck => true;
@@ -49,12 +36,8 @@ namespace Bloxstrap
 #endif
 
         public LaunchMode RobloxLaunchMode { get; set; } = LaunchMode.None;
-
         public string RobloxLaunchArgs { get; set; } = "";
 
-        /// <summary>
-        /// Original launch arguments
-        /// </summary>
         public string[] Args { get; private set; }
 
         public LaunchSettings(string[] args)
@@ -66,10 +49,8 @@ namespace Bloxstrap
 #endif
 
             Args = args;
-
             Dictionary<string, LaunchFlag> flagMap = new();
 
-            // build flag map
             foreach (var prop in this.GetType().GetProperties())
             {
                 if (prop.PropertyType != typeof(LaunchFlag))
@@ -84,12 +65,11 @@ namespace Bloxstrap
 
             int startIdx = 0;
 
-            // infer roblox launch uris
             if (Args.Length >= 1)
             {
                 string arg = Args[0];
 
-                if (arg.StartsWith("roblox:", StringComparison.OrdinalIgnoreCase) 
+                if (arg.StartsWith("roblox:", StringComparison.OrdinalIgnoreCase)
                     || arg.StartsWith("roblox-player:", StringComparison.OrdinalIgnoreCase))
                 {
                     App.Logger.WriteLine(LOG_IDENT, "Got Roblox player argument");
@@ -106,7 +86,6 @@ namespace Bloxstrap
                 }
             }
 
-            // parse
             for (int i = startIdx; i < Args.Length; i++)
             {
                 string arg = Args[i];
@@ -133,7 +112,7 @@ namespace Bloxstrap
 
                 flag.Active = true;
 
-                if (i < Args.Length - 1 && Args[i+1] is string nextArg && !nextArg.StartsWith('-'))
+                if (i < Args.Length - 1 && Args[i + 1] is string nextArg && !nextArg.StartsWith('-'))
                 {
                     flag.Data = nextArg;
                     i++;
@@ -146,7 +125,7 @@ namespace Bloxstrap
             }
 
             if (VersionFlag.Active)
-                RobloxLaunchMode = LaunchMode.Unknown; // determine in bootstrapper
+                RobloxLaunchMode = LaunchMode.Unknown;
 
             if (PlayerFlag.Active)
                 ParsePlayer(PlayerFlag.Data);
@@ -157,7 +136,6 @@ namespace Bloxstrap
         private void ParsePlayer(string? data)
         {
             const string LOG_IDENT = "LaunchSettings::ParsePlayer";
-
             RobloxLaunchMode = LaunchMode.Player;
 
             if (!String.IsNullOrEmpty(data))
@@ -174,7 +152,6 @@ namespace Bloxstrap
         private void ParseStudio(string? data)
         {
             const string LOG_IDENT = "LaunchSettings::ParseStudio";
-
             RobloxLaunchMode = LaunchMode.Studio;
 
             if (String.IsNullOrEmpty(data))
@@ -196,7 +173,6 @@ namespace Bloxstrap
             }
             else
             {
-                // likely a local path
                 App.Logger.WriteLine(LOG_IDENT, "Got Roblox Studio local place file");
                 RobloxLaunchArgs = $"-task EditFile -localPlaceFile \"{data}\"";
             }
