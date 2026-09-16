@@ -1,60 +1,118 @@
 # VNTrap
 
-VNTrap is a Windows Roblox launcher focused on a fast startup experience, configurable client behavior, diagnostics, and useful power-user tooling.
+**VNTrap** is a Windows launcher for Roblox built around fast startup, client configuration, diagnostics, and power-user controls.
+
+The project is based on an existing Bloxstrap/Fishstrap codebase and is being progressively refactored into its own launcher while retaining useful launcher functionality.
 
 > [!NOTE]
-> VNTrap currently targets Windows 10 and newer.
+> VNTrap currently targets **Windows 10 and newer** and uses **.NET 6 / WPF**.
 
-## Features
+## Highlights
 
-- Roblox Player and Roblox Studio support
-- FastFlags and Global Basic Settings editors
-- Channel switching
-- Cache and log cleanup
-- Detailed server information through the existing RoValra integration
+- Roblox Player and Roblox Studio launching
+- FastFlags and Global Basic Settings management
+- Roblox channel switching
+- Cache and log cleanup tools
+- Server information through the existing RoValra integration
 - Custom integrations
-- Crash diagnostics and local crash reports
-- Performance launch mode
-- Multi-client launch mode
-- Mica-based WPF interface with WPF-UI
-- Automatic update and bootstrapper workflow
+- Local crash diagnostics
+- Optional Windows process performance tuning
+- Best-effort multi-client launching
+- WPF-UI based launcher interface
+- Bootstrapper and update workflow
 
-## Multi-client mode
+## Launching
 
-VNTrap supports a best-effort multi-client launcher through command-line flags:
+VNTrap can be launched normally through the application UI or with command-line arguments.
 
-```text
-VNTrap.exe -player -multi 2
-VNTrap.exe -player -multi 4 -performance
+### Player
+
+```powershell
+VNTrap.exe -player
 ```
 
-The supported range is 2 to 8 requested clients. VNTrap starts the primary client normally and then requests the additional Roblox processes. Whether multiple clients can actually remain active is ultimately determined by the installed Roblox client and its current single-instance behavior.
+### Performance mode
 
-## Performance mode
-
-```text
+```powershell
 VNTrap.exe -player -performance
 ```
 
-Performance mode applies a conservative Windows scheduling adjustment to active `RobloxPlayerBeta.exe` processes. It does not modify Roblox binaries, inject code, or guarantee a higher FPS.
+Performance mode applies Windows process scheduling settings to running Roblox Player processes. It does **not** modify Roblox binaries, inject code, or guarantee an FPS increase.
+
+### Multiple clients
+
+```powershell
+VNTrap.exe -player -multi 2
+VNTrap.exe -player -multi 4
+VNTrap.exe -player -multi 8 -performance
+```
+
+`-multi` accepts **2–8 requested clients**. VNTrap starts the normal client and then attempts to start the additional processes.
+
+> [!IMPORTANT]
+> Multi-client support is intentionally best-effort. The installed Roblox client can enforce its own single-instance behavior, so VNTrap cannot guarantee that every requested client will remain active.
 
 ## Diagnostics
 
-Unhandled application exceptions are recorded locally under the application's log directory. Crash reports contain diagnostic information useful for troubleshooting and are not uploaded automatically.
+VNTrap includes application-level exception handling and local crash reporting.
+
+Crash reports are stored in the application's local log directory and are intended to provide useful information when troubleshooting crashes. Reports are **not automatically uploaded** by VNTrap.
+
+## Project structure
+
+The current source tree still contains the historical `Bloxstrap` project directory and namespace for compatibility with the existing codebase. The generated application assembly/product identity is **VNTrap**.
+
+```text
+VNTrap/
+├── Bloxstrap/              # Main WPF application source
+│   ├── Roblox/             # Roblox launch/performance helpers
+│   ├── UI/                 # WPF-UI views and view models
+│   ├── AppData/            # Launcher/application data
+│   └── ...
+├── .github/workflows/      # CI and release automation
+├── wpfui/                  # WPF-UI dependency
+├── Bloxstrap.sln
+└── README.md
+```
 
 ## Development
 
-The application is a WPF project using .NET 6, CommunityToolkit.Mvvm, WPF-UI and several existing integrations. The project is gradually being separated from its original upstream structure while preserving the launcher functionality that is still useful to VNTrap.
+### Requirements
 
-## Building
+- Windows 10 or newer
+- .NET 6 SDK
+- Git
+- Visual Studio 2022 or another compatible .NET/WPF development environment
+
+### Build
 
 ```powershell
 dotnet restore
 dotnet build .\Bloxstrap\Bloxstrap.csproj -c Release
 ```
 
-The release assembly is `VNTrap.exe`.
+The resulting application assembly is named **`VNTrap.exe`**.
 
-## License
+## CI
 
-See the repository's license and upstream attribution files for licensing information.
+The repository includes GitHub Actions workflows for debug and release builds.
+
+CI is responsible for restoring dependencies, building/publishing the WPF application, and producing VNTrap artifacts for the corresponding workflow.
+
+## Project status
+
+VNTrap is under active refactoring. Current work is focused on:
+
+- separating VNTrap identity from the original upstream branding
+- improving launcher reliability and diagnostics
+- keeping the UI responsive and lightweight
+- improving Roblox launch workflows
+- gradually modernizing the underlying project structure
+
+Some behavior remains dependent on the installed Roblox client and Windows environment.
+
+## Attribution
+
+VNTrap contains code and structure derived from the project's upstream launcher codebase. Existing licenses, attribution notices, and third-party licenses remain applicable.
+
+See the repository license files for the complete licensing information.
