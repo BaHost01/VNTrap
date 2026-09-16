@@ -24,5 +24,24 @@ namespace Bloxstrap.Roblox
                 App.Logger.WriteException(LOG_IDENT, ex);
             }
         }
+
+        public static void ApplyToRunningPlayers()
+        {
+            const string LOG_IDENT = "RobloxPerformanceManager::ApplyToRunningPlayers";
+
+            foreach (var process in Process.GetProcessesByName("RobloxPlayerBeta"))
+            {
+                try
+                {
+                    Apply(process);
+                }
+                finally
+                {
+                    process.Dispose();
+                }
+            }
+
+            App.Logger.WriteLine(LOG_IDENT, "Finished applying performance scheduling to running Roblox clients");
+        }
     }
 }
