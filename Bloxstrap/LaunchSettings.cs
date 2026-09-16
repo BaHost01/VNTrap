@@ -1,6 +1,9 @@
-﻿using Bloxstrap.Enums;
+﻿using Bloxstrap.AppData;
+using Bloxstrap.Enums;
+using Bloxstrap.Roblox;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -131,6 +134,66 @@ namespace Bloxstrap
                 ParsePlayer(PlayerFlag.Data);
             else if (StudioFlag.Active)
                 ParseStudio(StudioFlag.Data);
+
+            if (MultiInstanceFlag.Active && RobloxLaunchMode == LaunchMode.None)
+                RobloxLaunchMode = LaunchMode.Player;
+
+            StartLaunchOptimizations();
+        }
+
+        private void StartLaunchOptimizations()
+        {
+            if (PerformanceFlag.Active)
+            {
+                _ = Task.Run(async () =>
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(2));
+                    RobloxPerformanceManager.ApplyToRunningPlayers();
+                });
+            }
+
+            if (MultiInstanceFlag.Active && RobloxLaunchMode == LaunchMode.Player)
+            {
+                _ = Task.Run(async () =>
+                {
+                    const string LOG_IDENT = "LaunchSettings::MultiInstance";
+                    int target = RobloxMultiInstanceManager.ParseInstanceCount(MultiInstanceFlag.Data);
+                    DateTime deadline = DateTime.UtcNow.AddSeconds(30);
+
+                    while (DateTime.UtcNow < deadline)
+                    {
+                        if (Process.GetProcessesByName("RobloxPlayerBeta").Length > 0)
+                            break;
+
+                        await Task.Delay(250);
+                    }
+
+                    if (Process.GetProcessesByName("RobloxPlayerBeta").Length == 0)
+                    {
+                        App.Logger.WriteLine(LOG_IDENT, "Timed out waiting for the primary Roblox client");
+                        return;
+                    }
+
+                    string executablePath = new RobloxPlayerData().ExecutablePath;
+                    if (!File.Exists(executablePath))
+                    {
+                        App.Logger.WriteLine(LOG_IDENT, $"Roblox executable was not found at '{executablePath}'");
+                        return;
+                    }
+
+                    int launched = RobloxMultiInstanceManager.LaunchAdditionalInstances(
+                        executablePath,
+                        RobloxLaunchArgs,
+                        Path.GetDirectoryName(executablePath)!,
+                        target
+                    );
+
+                    if (PerformanceFlag.Active)
+                        RobloxPerformanceManager.ApplyToRunningPlayers();
+
+                    App.Logger.WriteLine(LOG_IDENT, $"Multi-instance launch requested: {launched + 1}/{target} clients");
+                });
+            }
         }
 
         private void ParsePlayer(string? data)
