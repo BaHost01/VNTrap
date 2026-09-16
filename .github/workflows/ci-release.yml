@@ -26,8 +26,8 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v7
       with:
-        #name: Fishstrap (Release) (${{ github.sha }})
-        path: .\Bloxstrap\bin\Release\net6.0-windows\win-x64\publish\Fishstrap.exe
+        name: VNTrap-Release-${{ github.sha }}
+        path: .\Bloxstrap\bin\Release\net6.0-windows\win-x64\publish\VNTrap.exe
         archive: false
 
   release:
@@ -40,19 +40,13 @@ jobs:
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v8
-        #with:
-        #  name: Fishstrap (Release) (${{ github.sha }})
-        #  path: release
-
-      #- name: Rename binaries
-      #  run: mv release/Fishstrap.exe Fishstrap.exe
 
       - name: Create release
         uses: softprops/action-gh-release@v3
         with:
           draft: true
-          files: Fishstrap.exe
-          name: Fishstrap ${{ github.ref_name }}
+          files: VNTrap.exe
+          name: VNTrap ${{ github.ref_name }}
           fail_on_unmatched_files: true
 
   release-test:
@@ -65,17 +59,11 @@ jobs:
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v8
-        #with:
-        #  name: Fishstrap (Release) (${{ github.sha }})
-        #  path: release
-
-      #- name: Rename binaries
-      #  run: mv release/Fishstrap.exe Fishstrap.exe
 
       - name: Create release
         uses: softprops/action-gh-release@v3
         with:
           draft: true
-          files: Fishstrap.exe
-          name: Fishstrap ${{ github.ref_name }}
+          files: VNTrap.exe
+          name: VNTrap ${{ github.ref_name }}
           fail_on_unmatched_files: true
