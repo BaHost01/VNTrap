@@ -28,45 +28,26 @@ namespace Bloxstrap
         public const string RobloxPlayerAppName = "RobloxPlayerBeta.exe";
         public const string RobloxStudioAppName = "RobloxStudioBeta.exe";
 
-        // simple shorthand for extremely frequently used and long string - this goes under HKCU
         public const string UninstallKey = $@"Software\Microsoft\Windows\CurrentVersion\Uninstall\{ProjectName}";
-
         public const string ApisKey = $"Software\\{ProjectName}";
 
         public static LaunchSettings LaunchSettings { get; private set; } = null!;
-
         public static BuildMetadataAttribute BuildMetadata = Assembly.GetExecutingAssembly().GetCustomAttribute<BuildMetadataAttribute>()!;
-
         public static string Version = Assembly.GetExecutingAssembly().GetName().Version!.ToString()[..^2];
-
         public static Bootstrapper? Bootstrapper { get; set; } = null!;
-
         public static bool IsActionBuild => !String.IsNullOrEmpty(BuildMetadata.CommitRef);
-
         public static bool IsProductionBuild => IsActionBuild && BuildMetadata.CommitRef.StartsWith("tag", StringComparison.Ordinal);
-
         public static bool IsStudioVisible => !String.IsNullOrEmpty(App.RobloxState.Prop.Studio.VersionGuid);
-
         public static readonly MD5 MD5Provider = MD5.Create();
-
         public static readonly Logger Logger = new();
-
         public static readonly Dictionary<string, BaseTask> PendingSettingTasks = new();
-
         public static readonly JsonManager<Settings> Settings = new();
-
         public static readonly JsonManager<State> State = new();
-
         public static readonly JsonManager<RobloxState> RobloxState = new();
-
         public static readonly RemoteDataManager RemoteData = new();
-
         public static readonly FastFlagManager FastFlags = new();
-
         public static readonly GlobalSettingsManager GlobalSettings = new();
-
         public static readonly CookiesManager Cookies = new();
-
         public static readonly HttpClient HttpClient = new(
             new HttpClientLoggingHandler(
                 new HttpClientHandler { AutomaticDecompression = DecompressionMethods.All }
@@ -78,28 +59,43 @@ namespace Bloxstrap
         public static void Terminate(ErrorCode exitCode = ErrorCode.ERROR_SUCCESS)
         {
             int exitCodeNum = (int)exitCode;
-
             Logger.WriteLine("App::Terminate", $"Terminating with exit code {exitCodeNum} ({exitCode})");
-
             Environment.Exit(exitCodeNum);
         }
 
         public static void SoftTerminate(ErrorCode exitCode = ErrorCode.ERROR_SUCCESS)
         {
             int exitCodeNum = (int)exitCode;
-
             Logger.WriteLine("App::SoftTerminate", $"Terminating with exit code {exitCodeNum} ({exitCode})");
-
             Current.Dispatcher.Invoke(() => Current.Shutdown(exitCodeNum));
         }
 
         void GlobalExceptionHandler(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
             e.Handled = true;
-
-            Logger.WriteLine("App::GlobalExceptionHandler", "An exception occurred");
-
+            Logger.WriteLine("App::GlobalExceptionHandler", "Unhandled UI exception captured");
             FinalizeExceptionHandling(e.Exception);
+        }
+
+        private static void GlobalUnhandledExceptionHandler(object? sender, UnhandledExceptionEventArgs e)
+        {
+            if (e.ExceptionObject is Exception exception)
+            {
+                Logger.WriteLine("App::GlobalUnhandledExceptionHandler", $"Unhandled exception captured (terminating={e.IsTerminating})");
+                DiagnosticsManager.WriteCrashReport(exception, "AppDomain.UnhandledException");
+            }
+            else
+            {
+                Logger.WriteLine("App::GlobalUnhandledExceptionHandler", "Unhandled non-Exception object captured");
+            }
+        }
+
+        private static void UnobservedTaskExceptionHandler(object? sender, UnobservedTaskExceptionEventArgs e)
+        {
+            Logger.WriteLine("App::UnobservedTaskExceptionHandler", "Unobserved task exception captured");
+            Logger.WriteException("App::UnobservedTaskExceptionHandler", e.Exception);
+            DiagnosticsManager.WriteCrashReport(e.Exception, "TaskScheduler.UnobservedTaskException");
+            e.SetObserved();
         }
 
         public static void FinalizeExceptionHandling(AggregateException ex)
@@ -115,23 +111,23 @@ namespace Bloxstrap
             if (log)
                 Logger.WriteException("App::FinalizeExceptionHandling", ex);
 
+            DiagnosticsManager.WriteCrashReport(ex, "Application exception handler");
+
             if (_showingExceptionDialog)
                 return;
 
             _showingExceptionDialog = true;
-
             SendLog();
 
             if (Bootstrapper?.Dialog != null)
             {
                 if (Bootstrapper.Dialog.TaskbarProgressValue == 0)
-                    Bootstrapper.Dialog.TaskbarProgressValue = 1; // make sure it's visible
+                    Bootstrapper.Dialog.TaskbarProgressValue = 1;
 
                 Bootstrapper.Dialog.TaskbarProgressState = TaskbarItemProgressState.Error;
             }
 
             Frontend.ShowExceptionDialog(ex);
-
             Terminate(ErrorCode.ERROR_INSTALL_FAILURE);
         }
 
@@ -162,7 +158,7 @@ namespace Bloxstrap
 
         public static void SendLog()
         {
-
+            Logger.WriteLine("App::SendLog", "Crash diagnostics are available locally; no automatic upload is performed.");
         }
 
         public static void AssertWindowsOSVersion()
@@ -170,7 +166,7 @@ namespace Bloxstrap
             const string LOG_IDENT = "App::AssertWindowsOSVersion";
 
             int major = Environment.OSVersion.Version.Major;
-            if (major < 10) // Windows 10 and newer only
+            if (major < 10)
             {
                 Logger.WriteLine(LOG_IDENT, $"Detected unsupported Windows version ({Environment.OSVersion.Version}).");
 
@@ -186,8 +182,10 @@ namespace Bloxstrap
             const string LOG_IDENT = "App::OnStartup";
 
             Locale.Initialize();
-
             base.OnStartup(e);
+
+            AppDomain.CurrentDomain.UnhandledException += GlobalUnhandledExceptionHandler;
+            TaskScheduler.UnobservedTaskException += UnobservedTaskExceptionHandler;
 
             Logger.WriteLine(LOG_IDENT, $"Starting {ProjectName} v{Version}");
 
@@ -198,7 +196,7 @@ namespace Bloxstrap
                 Logger.WriteLine(LOG_IDENT, $"Compiled {BuildMetadata.Timestamp.ToFriendlyString()} from commit {BuildMetadata.CommitHash} ({BuildMetadata.CommitRef})");
 
                 if (IsProductionBuild)
-                    userAgent += $" (Production)";
+                    userAgent += " (Production)";
                 else
                     userAgent += $" (Artifact {BuildMetadata.CommitHash}, {BuildMetadata.CommitRef})";
             }
@@ -218,16 +216,11 @@ namespace Bloxstrap
             Logger.WriteLine(LOG_IDENT, $"Temp path is {Paths.Temp}");
             Logger.WriteLine(LOG_IDENT, $"WindowsStartMenu path is {Paths.WindowsStartMenu}");
 
-            // To customize application configuration such as set high DPI settings or default font,
-            // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
-
             HttpClient.Timeout = TimeSpan.FromSeconds(30);
             HttpClient.DefaultRequestHeaders.Add("User-Agent", userAgent);
-
             LaunchSettings = new LaunchSettings(e.Args);
 
-            // installation check begins here
             using var uninstallKey = Registry.CurrentUser.OpenSubKey(UninstallKey);
             string? installLocation = null;
             bool fixInstallLocation = false;
@@ -240,7 +233,6 @@ namespace Bloxstrap
                 }
                 else
                 {
-                    // check if user profile folder has been renamed
                     var match = Regex.Match(value, @"^[a-zA-Z]:\\Users\\([^\\]+)", RegexOptions.IgnoreCase);
 
                     if (match.Success)
@@ -256,12 +248,10 @@ namespace Bloxstrap
                 }
             }
 
-            // silently change install location if we detect a portable run
             if (installLocation is null && Directory.GetParent(Paths.Process)?.FullName is string processDir)
             {
                 var files = Directory.GetFiles(processDir).Select(x => Path.GetFileName(x)).ToArray();
 
-                // check if settings.json and state.json are the only files in the folder
                 if (files.Length <= 3 && files.Contains("Settings.json") && files.Contains("State.json"))
                 {
                     installLocation = processDir;
@@ -284,7 +274,6 @@ namespace Bloxstrap
                 }
                 else
                 {
-                    // force reinstall
                     installLocation = null;
                 }
             }
@@ -294,14 +283,13 @@ namespace Bloxstrap
                 Logger.Initialize(true);
                 AssertWindowsOSVersion();
                 Logger.WriteLine(LOG_IDENT, "Not installed, launching the installer");
-                AssertWindowsOSVersion(); // prevent new installs from unsupported operating systems
+                AssertWindowsOSVersion();
                 LaunchHandler.LaunchInstaller();
             }
             else
             {
                 Paths.Initialize(installLocation);
 
-                // ensure executable is in the install directory
                 if (Paths.Process != Paths.Application && !File.Exists(Paths.Application))
                     File.Copy(Paths.Process, Paths.Application);
 
@@ -333,15 +321,10 @@ namespace Bloxstrap
                 if (!LaunchSettings.BypassUpdateCheck)
                     Installer.HandleUpgrade();
 
-                Task.Run(App.RemoteData.LoadData); // ok
-
-                WindowsRegistry.RegisterApis(); // we want to register those early on
-                                                // so we wont have any issues with bloxshade
-
+                Task.Run(App.RemoteData.LoadData);
+                WindowsRegistry.RegisterApis();
                 LaunchHandler.ProcessLaunchArgs();
             }
-
-            // you must *explicitly* call terminate when everything is done, it won't be called implicitly
         }
     }
 }
