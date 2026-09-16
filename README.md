@@ -1,81 +1,60 @@
-> [!CAUTION]
-> The only official places to download Fishstrap are this GitHub repository and
-> our website <https://www.fishstrap.app>. Any other websites offering downloads
-> or claiming to be us are not controlled by us, do not download from them.
+# VNTrap
 
-<div align="center">
-
-![][banner-light]
-![][banner-dark]
-
-![][badge-license]
-![][badge-actions]
-![][badge-downloads]
-[![][badge-latest]][repo-latest]
-[![][badge-discord]][discord-invite]
-![][badge-stars]
-
-</div>
-
-Fishstrap (pronounced fish-strap) is a custom bootstrapper for Roblox based on
-[Bloxstrap][bloxstrap] (pronounced blox-strap). It provides additional features
-to enhance your experience.
-
-If you found any bugs, please [open an issue here][repo-new-issue] or make a new
-post in [our Discord server][discord-invite]'s `#support-and-bugs` channel.
+VNTrap is a Windows Roblox launcher focused on a fast startup experience, configurable client behavior, diagnostics, and useful power-user tooling.
 
 > [!NOTE]
-> Fishstrap is an application for **Windows 10 and above.** For other operating
-> systems, such as Mac OS and various Linux distributions, you can try
-> [AppleBlox][appleblox] and [Sober][sober] respectively.
+> VNTrap currently targets Windows 10 and newer.
 
 ## Features
 
-- Detailed server information using [RoValra][rovalra]'s API
-- Support for Roblox Studio
-- Unhidden FastFlags editor
-  - You cannot apply FastFlags not present in the allowlist. This does not
-    affect Roblox Studio. [Learn more][devforum-fflags]
-- Global Basic Settings editor
-  - Ability to increase frame rate cap, toggle quality levels and more
-- Fishstrap's own game invites
-  - Try it out now — this link will lead you to Crossroads (don't turn left!):
-    <https://www.fishstrap.app/v1/joingame?placeId=1818>
-- Cache cleaner, channel switcher and many more
+- Roblox Player and Roblox Studio support
+- FastFlags and Global Basic Settings editors
+- Channel switching
+- Cache and log cleanup
+- Detailed server information through the existing RoValra integration
+- Custom integrations
+- Crash diagnostics and local crash reports
+- Performance launch mode
+- Multi-client launch mode
+- Mica-based WPF interface with WPF-UI
+- Automatic update and bootstrapper workflow
 
-## Special thanks
+## Multi-client mode
 
-- [Valra](https://github.com/NotValra) for providing their API
-- Other independent contributors
+VNTrap supports a best-effort multi-client launcher through command-line flags:
 
-<div align="center">
+```text
+VNTrap.exe -player -multi 2
+VNTrap.exe -player -multi 4 -performance
+```
 
-![][repo-showcase-light]
-![][repo-showcase-dark]
+The supported range is 2 to 8 requested clients. VNTrap starts the primary client normally and then requests the additional Roblox processes. Whether multiple clients can actually remain active is ultimately determined by the installed Roblox client and its current single-instance behavior.
 
-</div>
+## Performance mode
 
-[banner-light]: https://github.com/fishstrap/fishstrap/raw/main/Images/Fishstrap-Light.png#gh-light-mode-only
-[banner-dark]:  https://github.com/fishstrap/fishstrap/raw/main/Images/Fishstrap-Dark.png#gh-dark-mode-only
+```text
+VNTrap.exe -player -performance
+```
 
-[badge-license]:   https://img.shields.io/github/license/fishstrap/fishstrap?style=flat-square
-[badge-actions]:   https://img.shields.io/github/actions/workflow/status/fishstrap/fishstrap/ci-release.yml?branch=main&style=flat-square&label=builds
-[badge-downloads]: https://img.shields.io/github/downloads/fishstrap/fishstrap/latest/total?style=flat-square&color=981bfe
-[badge-latest]:    https://img.shields.io/github/v/release/fishstrap/fishstrap?style=flat-square&color=7a39fb
-[badge-discord]:   https://img.shields.io/discord/1299397064165429360?style=flat-square&logo=discord&logoColor=white&logoSize=auto&label=discord&color=4d3dff
-[badge-stars]:     https://img.shields.io/github/stars/fishstrap/fishstrap?style=flat-square&color=dd9900
+Performance mode applies a conservative Windows scheduling adjustment to active `RobloxPlayerBeta.exe` processes. It does not modify Roblox binaries, inject code, or guarantee a higher FPS.
 
-[repo-latest]:    https://github.com/fishstrap/fishstrap/releases/latest
-[repo-new-issue]: https://github.com/fishstrap/fishstrap/issues/new/choose
+## Diagnostics
 
-[repo-showcase-dark]:  https://github.com/fishstrap/fishstrap/raw/main/Images/Showcase-Dark.png#gh-dark-mode-only
-[repo-showcase-light]:  https://github.com/fishstrap/fishstrap/raw/main/Images/Showcase-Light.png#gh-light-mode-only
+Unhandled application exceptions are recorded locally under the application's log directory. Crash reports contain diagnostic information useful for troubleshooting and are not uploaded automatically.
 
-[discord-invite]: https://discord.gg/SRs5zb9BJd
+## Development
 
-[bloxstrap]: https://bloxstraplabs.com
-[appleblox]: https://github.com/AppleBlox/appleblox
-[sober]:     https://sober.vinegarhq.org
-[rovalra]:   https://www.rovalra.com
+The application is a WPF project using .NET 6, CommunityToolkit.Mvvm, WPF-UI and several existing integrations. The project is gradually being separated from its original upstream structure while preserving the launcher functionality that is still useful to VNTrap.
 
-[devforum-fflags]: https://devforum.roblox.com/t/allowlist-for-local-client-configuration-via-fast-flags/3966569
+## Building
+
+```powershell
+dotnet restore
+dotnet build .\Bloxstrap\Bloxstrap.csproj -c Release
+```
+
+The release assembly is `VNTrap.exe`.
+
+## License
+
+See the repository's license and upstream attribution files for licensing information.
